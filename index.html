@@ -1,15 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="0; url=./live.html">
-  <title>Top Tier Institute — Live Student Tracker</title>
-  <link rel="canonical" href="./live.html">
-  <script>window.location.replace('./live.html' + window.location.search + window.location.hash);</script>
-  <style>body{margin:0;background:#06100A;color:#E8D9BC;font-family:Arial,sans-serif;display:grid;place-items:center;min-height:100vh}a{color:#C9A84C}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Top Tier Institute — Student Tracker</title>
+<style>
+:root{--bg:#06100A;--panel:#0D1C14;--border:#1F3A2C;--gold:#C9A84C;--cream:#E8D9BC;--muted:#8A9A8E;--green:#6FAE7F;--red:#C47171}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--cream);font-family:Arial,sans-serif;padding:24px}.wrap{max-width:1450px;margin:auto}.top{display:flex;justify-content:space-between;gap:20px;align-items:center;border-bottom:1px solid var(--border);padding-bottom:20px}.top h1{margin:0;font-size:30px}.sub{color:var(--muted);font-size:13px;margin-top:6px}.live{padding:9px 12px;border:1px solid var(--border);background:var(--panel);font-size:12px}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:20px 0}.card{background:var(--panel);border:1px solid var(--border);padding:16px}.label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em}.value{font-size:28px;margin-top:7px;color:var(--gold)}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}.toolbar input,.toolbar select{background:var(--panel);color:var(--cream);border:1px solid var(--border);padding:10px 12px}.toolbar input{min-width:280px}.tabs{display:flex;gap:8px;margin:18px 0}.tabs button{background:transparent;color:var(--muted);border:1px solid var(--border);padding:9px 13px;cursor:pointer}.tabs button.active{background:var(--gold);color:#06100A;border-color:var(--gold)}.view{display:none}.view.active{display:block}.tablewrap{overflow:auto;border:1px solid var(--border)}table{width:100%;border-collapse:collapse;min-width:1100px;background:var(--panel)}th,td{padding:12px 13px;border-bottom:1px solid var(--border);text-align:left;font-size:12px;white-space:nowrap}th{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}.pill{padding:4px 7px;border:1px solid var(--border);display:inline-block}.paid{color:var(--green)}.partial{color:var(--gold)}.intakes{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}.intake{background:var(--panel);border:1px solid var(--border);padding:16px}.intake h3{margin:0 0 8px;font-size:16px}.intake p{margin:4px 0;color:var(--muted);font-size:12px}.error{display:none;margin:16px 0;padding:12px;border:1px solid var(--red);color:#efb4b4;background:#2a1111}.notice{margin:16px 0;padding:12px;border-left:3px solid var(--gold);background:var(--panel);color:var(--muted);font-size:12px}@media(max-width:900px){body{padding:14px}.stats{grid-template-columns:repeat(2,1fr)}.top{align-items:flex-start;flex-direction:column}.toolbar input{min-width:100%}}
+</style>
 </head>
 <body>
-  <p>Opening the live Supabase tracker… <a href="./live.html">Continue</a></p>
+<div class="wrap">
+  <div class="top">
+    <div><h1>Top Tier Institute</h1><div class="sub">Live Supabase Student Tracker</div></div>
+    <div class="live" id="status">Connecting…</div>
+  </div>
+
+  <div class="stats">
+    <div class="card"><div class="label">Students</div><div class="value" id="total">—</div></div>
+    <div class="card"><div class="label">Fully Paid</div><div class="value" id="fullpaid">—</div></div>
+    <div class="card"><div class="label">Collected</div><div class="value" id="collected">—</div></div>
+    <div class="card"><div class="label">Outstanding</div><div class="value" id="outstanding">—</div></div>
+    <div class="card"><div class="label">Bootcamp Students</div><div class="value" id="bootcount">—</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="active" data-view="students">Students</button>
+    <button data-view="intakes">Intakes</button>
+  </div>
+
+  <div class="toolbar">
+    <input id="search" placeholder="Search name, course or intake">
+    <select id="course"><option value="">All courses</option></select>
+  </div>
+
+  <div id="error" class="error"></div>
+  <div class="notice">This page reads directly from Supabase. Refreshing the page always requests the latest student and intake data.</div>
+
+  <section id="students" class="view active">
+    <div class="tablewrap">
+      <table><thead><tr><th>Name</th><th>Course</th><th>Intake</th><th>Start</th><th>Status</th><th>Fee</th><th>Paid</th><th>Outstanding</th><th>Balance Due</th></tr></thead><tbody id="rows"></tbody></table>
+    </div>
+  </section>
+
+  <section id="intakes" class="view"><div class="intakes" id="intakeCards"></div></section>
+</div>
+<script>
+const URL='https://kdnbutlgooskjmrgflga.supabase.co';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkbmJ1dGxnb29za2ptcmdmbGdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2OTIzNjksImV4cCI6MjEwMjI2ODM2OX0.VHu5zh2YFJdf0N4OBSEkRtRZTeKIFGF53uT-k0MXIjA';
+const headers={apikey:KEY,Authorization:'Bearer '+KEY};
+let students=[],intakes=[];
+const $=id=>document.getElementById(id);
+const money=n=>'S$'+Number(n||0).toLocaleString('en-SG',{maximumFractionDigits:0});
+const date=v=>v?new Date(v+'T00:00:00').toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'}):'—';
+const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
+async function api(path){const r=await fetch(URL+'/rest/v1/'+path,{headers,cache:'no-store'});if(!r.ok)throw new Error(await r.text());return r.json()}
+async function load(){try{$('status').textContent='Loading latest…';$('error').style.display='none';const stamp=Date.now();[students,intakes]=await Promise.all([api('students?select=id,name,course,intake,start_date,status,fee,paid,next_due,updated_at&order=updated_at.desc&_='+stamp),api('intakes?select=id,name,course,start_date,seats,sessions&order=start_date.asc&_='+stamp)]);render();$('status').textContent='Live · '+new Date().toLocaleTimeString('en-SG',{hour:'2-digit',minute:'2-digit'})}catch(e){$('status').textContent='Connection error';$('error').style.display='block';$('error').textContent=e.message}}
+function render(){const collected=students.reduce((a,s)=>a+Number(s.paid||0),0);const out=students.reduce((a,s)=>a+Math.max(0,Number(s.fee||0)-Number(s.paid||0)),0);$('total').textContent=students.length;$('fullpaid').textContent=students.filter(s=>Number(s.fee)>0&&Number(s.paid)>=Number(s.fee)).length;$('collected').textContent=money(collected);$('outstanding').textContent=money(out);$('bootcount').textContent=students.filter(s=>s.course==='BOOTCAMP ESSENTIALS').length;const courses=[...new Set(students.map(s=>s.course).filter(Boolean))].sort();const sel=$('course'),v=sel.value;sel.innerHTML='<option value="">All courses</option>'+courses.map(c=>'<option>'+esc(c)+'</option>').join('');sel.value=v;renderRows();renderIntakes()}
+function filtered(){const q=$('search').value.trim().toLowerCase(),c=$('course').value;return students.filter(s=>(!q||[s.name,s.course,s.intake].some(v=>String(v||'').toLowerCase().includes(q)))&&(!c||s.course===c))}
+function renderRows(){const list=filtered();$('rows').innerHTML=list.map(s=>{const outstanding=Math.max(0,Number(s.fee||0)-Number(s.paid||0));const cls=outstanding===0?'paid':'partial';return `<tr><td><strong>${esc(s.name)}</strong></td><td>${esc(s.course||'—')}</td><td>${esc(s.intake||'—')}</td><td>${date(s.start_date)}</td><td>${esc(s.status||'—')}</td><td>${money(s.fee)}</td><td>${money(s.paid)}</td><td class="${cls}">${money(outstanding)}</td><td>${date(s.next_due)}</td></tr>`}).join('')||'<tr><td colspan="9">No matching students.</td></tr>'}
+function renderIntakes(){$('intakeCards').innerHTML=intakes.map(i=>{const enrolled=students.filter(s=>s.intake===i.name).length;return `<div class="intake"><h3>${esc(i.name)}</h3><p>${esc(i.course||'—')}</p><p>Start: ${date(i.start_date)}</p><p>Enrolled: ${enrolled}${i.seats?' / '+i.seats:''}</p></div>`}).join('')}
+$('search').addEventListener('input',renderRows);$('course').addEventListener('change',renderRows);document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.view).classList.add('active')}));
+load();setInterval(load,30000);
+</script>
 </body>
 </html>
