@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Top Tier Institute — Migrate Tracker Data</title>
+<style>
+body{margin:0;background:#06100A;color:#E8D9BC;font-family:Arial,sans-serif;display:grid;place-items:center;min-height:100vh;padding:24px}.card{max-width:720px;width:100%;background:#0D1C14;border:1px solid #1F3A2C;padding:28px;box-sizing:border-box}.eyebrow{color:#C9A84C;text-transform:uppercase;letter-spacing:.18em;font-size:11px;font-weight:700}h1{font-size:28px;margin:8px 0 10px}p{color:#9EAB9F;line-height:1.6}.summary{margin:20px 0;border:1px solid #1F3A2C;background:#122820;padding:16px}.row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1F3A2C}.row:last-child{border-bottom:0}.num{color:#C9A84C;font-weight:700}.btn{width:100%;border:0;background:#C9A84C;color:#06100A;padding:14px 18px;font-weight:800;cursor:pointer;font-size:14px}.btn:disabled{opacity:.45;cursor:not-allowed}.status{margin-top:16px;padding:12px;display:none}.status.ok{display:block;border:1px solid #6FAE7F;color:#9BD4A9;background:rgba(111,174,127,.08)}.status.bad{display:block;border:1px solid #C47171;color:#e5b1b1;background:rgba(196,113,113,.08)}.small{font-size:12px;color:#7F8F83;margin-top:14px}.link{display:inline-block;margin-top:18px;color:#C9A84C}
+</style>
+</head>
+<body>
+<div class="card">
+<div class="eyebrow">Top Tier Institute</div>
+<h1>Import Existing Tracker Data</h1>
+<p>This page reads the existing tracker data stored in this browser and sends it to the new Supabase backend. It preserves the full legacy student object inside each imported record as a backup.</p>
+<div class="summary">
+<div class="row"><span>Students found</span><span class="num" id="students-count">0</span></div>
+<div class="row"><span>Intakes found</span><span class="num" id="intakes-count">0</span></div>
+<div class="row"><span>Custom calendar blocks</span><span class="num" id="blocks-count">0</span></div>
+</div>
+<button class="btn" id="import-btn">Import Everything to Supabase</button>
+<div id="status" class="status"></div>
+<div class="small">Use this page from the same browser/device where the current tracker contains your students. Do not clear browser data before migration.</div>
+<a class="link" href="./live.html">Open Live Supabase Tracker →</a>
+</div>
+<script>
+const STUDENT_KEY='tti_students_v2';
+const INTAKE_KEY='tti_intakes_v1';
+const BLOCK_KEY='tti_custom_blocks_v1';
+const ENDPOINT='https://kdnbutlgooskjmrgflga.supabase.co/functions/v1/migrate-local-tracker';
+const MIGRATION_KEY='tti-migrate-20260814-4f9c7a2e';
+function read(key){try{return JSON.parse(localStorage.getItem(key)||'[]')}catch{return []}}
+const students=read(STUDENT_KEY),intakes=read(INTAKE_KEY),customBlocks=read(BLOCK_KEY);
+document.getElementById('students-count').textContent=students.length;
+document.getElementById('intakes-count').textContent=intakes.length;
+document.getElementById('blocks-count').textContent=customBlocks.length;
+const btn=document.getElementById('import-btn'),status=document.getElementById('status');
+if(!students.length){btn.disabled=true;status.className='status bad';status.textContent='No existing students were found in this browser. Open this page using the browser/device where you normally use the old tracker.'}
+btn.addEventListener('click',async()=>{
+  btn.disabled=true;btn.textContent='Importing…';status.className='status';status.textContent='';
+  try{
+    const res=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','x-migration-key':MIGRATION_KEY},body:JSON.stringify({students,intakes,customBlocks})});
+    const data=await res.json();
+    if(!res.ok||!data.ok)throw new Error(data.error||'Migration failed');
+    status.className='status ok';status.textContent=`Imported successfully: ${data.students} students, ${data.intakes} intakes, ${data.blocks} calendar blocks.`;
+    btn.textContent='Migration Complete';localStorage.setItem('tti_supabase_migrated_at',new Date().toISOString());
+  }catch(e){status.className='status bad';status.textContent='Import failed: '+e.message;btn.disabled=false;btn.textContent='Try Import Again';}
+});
+</script>
+</body></html>
